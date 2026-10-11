@@ -2,8 +2,9 @@ name: Build Jerry Android APK
 
 on:
   workflow_dispatch:
-  repository_dispatch:
-    types: [build_apk]
+
+permissions:
+  contents: write
 
 jobs:
   build-apk:
@@ -18,18 +19,18 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
 
-      - name: Create Native Android App Template
+      - name: Generate Native Android App
         run: |
           mkdir -p app/src/main/java/com/jerry/network
           mkdir -p app/src/main/res/values
-          
+
           cat << 'EOF' > app/src/main/AndroidManifest.xml
           <manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.jerry.network">
               <uses-permission android:name="android.permission.INTERNET" />
-              <application android:label="Jerry Network" android:theme="@android:style/Theme.NoTitleBar">
+              <application android:label="Jerry Network" android:theme="@android:style/Theme.NoTitleBar" android:usesCleartextTraffic="true">
                   <activity android:name=".MainActivity" android:exported="true">
                       <intent-filter>
                           <action android:name="android.intent.action.MAIN" />
@@ -64,22 +65,34 @@ jobs:
           EOF
 
           cat << 'EOF' > settings.gradle
+          pluginManagement {
+              repositories {
+                  google()
+                  mavenCentral()
+                  gradlePluginPortal()
+              }
+          }
+          dependencyResolutionManagement {
+              repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+              repositories {
+                  google()
+                  mavenCentral()
+              }
+          }
           rootProject.name = 'JerryApp'
           include ':app'
           EOF
 
           cat << 'EOF' > build.gradle
-          buildscript {
-              repositories { google(); mavenCentral() }
-              dependencies { classpath 'com.android.tools.build:gradle:8.2.2' }
-          }
-          allprojects {
-              repositories { google(); mavenCentral() }
+          plugins {
+              id 'com.android.application' version '8.2.2' apply false
           }
           EOF
 
           cat << 'EOF' > app/build.gradle
-          apply plugin: 'com.android.application'
+          plugins {
+              id 'com.android.application'
+          }
           android {
               namespace 'com.jerry.network'
               compileSdk 34
@@ -93,11 +106,17 @@ jobs:
           }
           EOF
 
-      - name: Build Android APK
-        run: gradle app:assembleDebug --stacktrace
+      - name: Build APK via Gradle
+        env:
+          ANDROID_HOME: /usr/local/lib/android/sdk
+        run: |
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
+          gradle wrapper
+          ./gradlew assembleDebug --stacktrace
+          cp app/build/outputs/apk/debug/app-debug.apk Jerry_App.apk
 
-      - name: Upload APK Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: Jerry_Mobile_App
-          path: app/build/outputs/apk/debug/app-debug.apk
+      - name: Upload APK directly to GitHub Release
+        run: |
+          gh release upload v1.0.0 Jerry_App.apk --clobber
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
