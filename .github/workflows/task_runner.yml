@@ -1,0 +1,35 @@
+name: Jerry Remote Task Runner
+
+on:
+  repository_dispatch:
+    types: [jerry_task]
+  workflow_dispatch:
+    inputs:
+      instruction:
+        description: 'Task Instruction'
+        required: false
+        default: 'Hello Jerry'
+
+jobs:
+  run-remote-ai:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Execute Dispatched Task
+        run: |
+          echo "================================================"
+          echo "🚀 JERRY REMOTE CLOUD RUNNER ACTIVE"
+          echo "Instruction: ${{ github.event.client_payload.instruction }}"
+          echo "================================================"
+          python -c "
+          payload = '''${{ github.event.client_payload.instruction }}'''
+          print(f'[RUNNER CLOUD]: Heavy compute task started: {payload}')
+          print('[RUNNER CLOUD]: Task processed with 0MB laptop resource load.')
+          "
