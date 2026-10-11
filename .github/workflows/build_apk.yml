@@ -58,7 +58,7 @@ jobs:
                   settings.setJavaScriptEnabled(true);
                   settings.setDomStorageEnabled(true);
                   webView.setWebViewClient(new WebViewClient());
-                  webView.loadUrl("https://jerry-network.web.app");
+                  webView.loadUrl("https://jerry-network.web.app/buddy.html");
                   setContentView(webView);
               }
           }
@@ -66,18 +66,11 @@ jobs:
 
           cat << 'EOF' > settings.gradle
           pluginManagement {
-              repositories {
-                  google()
-                  mavenCentral()
-                  gradlePluginPortal()
-              }
+              repositories { google(); mavenCentral(); gradlePluginPortal() }
           }
           dependencyResolutionManagement {
               repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
-              repositories {
-                  google()
-                  mavenCentral()
-              }
+              repositories { google(); mavenCentral() }
           }
           rootProject.name = 'JerryApp'
           include ':app'
@@ -90,9 +83,7 @@ jobs:
           EOF
 
           cat << 'EOF' > app/build.gradle
-          plugins {
-              id 'com.android.application'
-          }
+          plugins { id 'com.android.application' }
           android {
               namespace 'com.jerry.network'
               compileSdk 34
@@ -100,8 +91,8 @@ jobs:
                   applicationId "com.jerry.network"
                   minSdk 24
                   targetSdk 34
-                  versionCode 1
-                  versionName "1.0"
+                  versionCode 2
+                  versionName "2.0"
               }
           }
           EOF
